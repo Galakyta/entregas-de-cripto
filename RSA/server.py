@@ -96,3 +96,7 @@ if __name__ == "__main__":
     print("  GET  /chave/<usuario>")
     print("  GET  /ultimo\n")
     HTTPServer(("", port), Handler).serve_forever()
+
+
+#python usuario.py patata 8001
+#python usuario.py patati 8002
