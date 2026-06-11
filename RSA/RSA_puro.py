@@ -104,17 +104,21 @@ def decrypt_text(cipherchunks, priv, pub):
     return b''.join(parts).decode('utf-8')
 
 
-pub, priv = keygen(512)
-msg = 42
-c = encrypt(msg, pub)
-m = decrypt(c, priv)
-print(f"Original: {msg}, Decifrado: {m}")  # 42
+if __name__ == "__main__":
+    pub, priv = keygen(512)
 
-pub, priv = keygen(512)
-msg = "if dreams can come true what does that say about nightmares"
+    msg = 42
+    c = encrypt(msg, pub)
+    m = decrypt(c, priv)
 
-cifrado = encrypt_text(msg, pub)
-decifrado = decrypt_text(cifrado, priv, pub)
+    print(f"Original: {msg}, Decifrado: {m}")
 
-print(f"original:  {msg}")
-print(f"oliginal: {decifrado}")
+    pub, priv = keygen(512)
+
+    msg = "if dreams can come true what does that say about nightmares"
+
+    cifrado = encrypt_text(msg, pub)
+    decifrado = decrypt_text(cifrado, priv, pub)
+
+    print(f"original: {msg}")
+    print(f"decifrado: {decifrado}")

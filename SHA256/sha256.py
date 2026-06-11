@@ -35,9 +35,7 @@ def sigma1_minusculo(x):
 
 x, y, z = 0b1100, 0b1010, 0b0110
 
-#assert ch(x, y, z) & 0xF == 0b1010  # resultado simplificado
-#assert maj(x, y, z) & 0xF == 0b1110
-#print("✅ Passo 2: Funções lógicas OK")
+
 
 K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
     0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -94,7 +92,7 @@ def expandir_mensagem(bloco):
         s1 = sigma1_minusculo(w[i-2])
         w[i] = (w[i-16] + s0 + w[i-7] + s1) & 0xFFFFFFFF
 
-    return w  # Bug 4 fixed: return w is inside the function
+    return w  
 
 test_bloco = b'A' * 64
 

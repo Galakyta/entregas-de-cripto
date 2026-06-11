@@ -5,7 +5,7 @@ import json, sys, os, urllib.request, threading
 import tkinter as tk
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from RSA_puro import keygen, encrypt_text, decrypt_text
-
+gui = None
 NOME    = sys.argv[1] if len(sys.argv) > 1 else "patata"
 PORTA   = int(sys.argv[2]) if len(sys.argv) > 2 else 8001
 OUTRO   = "patati" if NOME == "patata" else "patata"
@@ -52,8 +52,12 @@ class WebhookHandler(BaseHTTPRequestHandler):
             de      = data["de"]
             chunks  = data["chunks"]
             texto   = decrypt_text(chunks, priv, pub)  # decifra com chave privada local
-            print(f"\n  🔔 {de}: {texto}")
-            print(f">> ", end="", flush=True)
+            gui.janela.after(
+    0,
+    lambda: gui.adicionar_mensagem(
+        f"{de}: {texto}"
+    )
+)
             self.send_response(200)
             self.end_headers()
         else:
@@ -64,36 +68,99 @@ threading.Thread(target=lambda: HTTPServer(("", PORTA), WebhookHandler).serve_fo
                  daemon=True).start()
 
 # --- menu ---
-def menu():
-    while True:
-        print(f"=== {NOME} ===")
-        print(f"  1. Enviar mensagem pra {OUTRO}")
-        print(f"  2. Patatonto (ver ultimo cifrado)")
-        print(f"  0. Sair")
-        op = input(">> ").strip()
+# ---------------- GUI ----------------
 
-        if op == "1":
-            texto = input("Mensagem: ").strip()
-            if not texto:
-                continue
-            pub_outro = buscar_pub(OUTRO)          # busca pub do destinatario no servidor
-            chunks    = encrypt_text(texto, pub_outro)  # cifra LOCALMENTE
-            resp = post_central("/enviar", {"de": NOME, "para": OUTRO, "chunks": chunks})
-            print("[enviado]\n" if resp.get("ok") else f"[erro: {resp}]\n")
+class ChatGUI:
+    def __init__(self):
+        self.janela = tk.Tk()
+        self.janela.title(f"ZipZop - {NOME}")
+        self.janela.geometry("500x600")
 
-        elif op == "2":
-            resp = get_central("/ultimo")
-            if not resp.get("chunks"):
-                print("\n[nenhuma mensagem enviada ainda]\n")
-            else:
-                print(f"\n=== PATATONTO (de {resp['de']} pra {resp['para']}) ===")
-                for i, chunk in enumerate(resp["chunks"]):
-                    s = str(chunk)
-                    print(f"  [{i}] {s[:60]}{'...' if len(s) > 60 else ''}")
-                print()
+        titulo = tk.Label(
+            self.janela,
+            text=f"{NOME} conversando com {OUTRO}",
+            font=("Arial", 12, "bold")
+        )
+        titulo.pack(pady=5)
 
-        elif op == "0":
-            print("tchau")
-            break
+        self.chat = tk.Text(
+            self.janela,
+            state="disabled",
+            wrap="word"
+        )
 
-menu()
+        self.chat.pack(
+            fill="both",
+            expand=True,
+            padx=10,
+            pady=10
+        )
+
+        frame = tk.Frame(self.janela)
+        frame.pack(fill="x", padx=10, pady=10)
+
+        self.entrada = tk.Entry(frame)
+        self.entrada.pack(
+            side="left",
+            fill="x",
+            expand=True
+        )
+
+        self.entrada.bind("<Return>", lambda e: self.enviar())
+
+        botao = tk.Button(
+            frame,
+            text="Enviar",
+            command=self.enviar
+        )
+
+        botao.pack(side="right", padx=5)
+
+    def adicionar_mensagem(self, texto):
+        self.chat.config(state="normal")
+        self.chat.insert(tk.END, texto + "\n")
+        self.chat.see(tk.END)
+        self.chat.config(state="disabled")
+
+    def enviar(self):
+        texto = self.entrada.get().strip()
+
+        if not texto:
+            return
+
+        try:
+            pub_outro = buscar_pub(OUTRO)
+
+            chunks = encrypt_text(
+                texto,
+                pub_outro
+            )
+
+            resp = post_central(
+                "/enviar",
+                {
+                    "de": NOME,
+                    "para": OUTRO,
+                    "chunks": chunks
+                }
+            )
+
+            if resp.get("ok"):
+                self.adicionar_mensagem(
+                    f"Você: {texto}"
+                )
+
+                self.entrada.delete(0, tk.END)
+
+        except Exception as e:
+            self.adicionar_mensagem(
+                f"[ERRO] {e}"
+            )
+
+    def iniciar(self):
+        self.janela.mainloop()
+gui = ChatGUI()
+
+
+
+gui.iniciar()
